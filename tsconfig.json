@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "lib",
+    "noImplicitAny": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "customTypings.d.ts"
+  ]
+}
