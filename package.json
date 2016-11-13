@@ -1,6 +1,6 @@
 {
   "name": "ng2-jspm-template-libs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A collection of utilities which are used by the ng2-jspm-template.",
   "author": {
     "name": "Sven Reglitzki",

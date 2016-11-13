@@ -1,0 +1,10 @@
+*.iml
+/src
+/node_modules
+.idea
+.travis.yml
+customTypings.d.ts
+.editorconfig
+tsconfig.json
+tslint.json
+npm-debug.log*
