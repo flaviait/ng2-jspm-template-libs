@@ -51,9 +51,10 @@ export class StyleCompiler extends EventEmitter {
     return new Promise((resolve, reject) =>
       sass.render(_.assign({file: file}, config.styles.sass, {
         sourceMapEmbed: true,
-        sourceMapContents: true,
+        sourceMapContents: true,       
+		importer: (url, _ , done) => done({file: url.startsWith('~') ? url.substring(1) : url}),
       }), (error, result) => {
-        if (error) {
+        if (error) { 
           error.message = `${error.line}:${error.column} ${error.message}`;
           reject(error);
         } else {
