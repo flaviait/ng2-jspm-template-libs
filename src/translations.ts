@@ -5,6 +5,7 @@ import * as yaml from "js-yaml";
 import * as log4js from "log4js";
 
 import utils from "./utils";
+import {TranslationsConfig} from "./config/config.interface";
 
 const mapLeaves = (obj: any, iteratee: any, path: string[] = []): any => {
   return _.flatMap(obj, (value, key) => {
@@ -30,17 +31,14 @@ export class TranslationCompiler extends EventEmitter {
 
   private logger = log4js.getLogger("translations");
 
-  constructor(private filesGlob: string,
-              private output: string,
-              private statistics: boolean,
-              private watch?: boolean) {
+  constructor(private config: TranslationsConfig) {
     super();
   }
 
   start() {
     this.run();
-    if (this.watch) {
-      utils.watch(this.filesGlob, () => this.run(), {events: ["change", "unlink"]});
+    if (this.config.watch) {
+      utils.watch(this.config.files, () => this.run(), {events: ["change", "unlink"]});
     }
 
     return this;
@@ -50,7 +48,7 @@ export class TranslationCompiler extends EventEmitter {
     this.compile()
       .then(
         () => {
-          this.logger.debug(`Translations written to ${this.output}`);
+          this.logger.debug(`Translations written to ${this.config.output}`);
           this.emit("success");
         },
         (err) => {
@@ -60,7 +58,7 @@ export class TranslationCompiler extends EventEmitter {
   }
 
   private compile() {
-    return utils.getFiles(this.filesGlob)
+    return utils.getFiles(this.config.files)
       .then(paths => Promise.all(paths.map(path =>
         utils.readFile(path).then(contents => ({contents, path})))))
       .then(files => Promise.all(files.map((file: {path: string, contents: string}) =>
@@ -68,11 +66,11 @@ export class TranslationCompiler extends EventEmitter {
           path: file.path,
           translations: yaml.safeLoad(file.contents, {filename: file.path})
         }))))
-      .then(partials => this.statistics ? this.runStatistics(partials) : partials)
+      .then(partials => this.config.statistics ? this.runStatistics(partials) : partials)
       .then(partials => _.defaultsDeep({}, ..._.map(partials, "translations")))
       .then(translations => this.byLanguage(translations))
       .then(translations => `export default ${JSON.stringify(translations, null, 4)};`)
-      .then(content => utils.writeFile(this.output, content));
+      .then(content => utils.writeFile(this.config.output, content));
   }
 
   private runStatistics(partials: {path: string, translations: any}[]) {

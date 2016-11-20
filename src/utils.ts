@@ -4,12 +4,23 @@ import * as chokidar from "chokidar";
 import * as mkdirp from "mkdirp";
 import * as glob from "glob";
 import * as path from "path";
+import * as rimraf from "rimraf";
+import * as waitForChange from "wait-for-change";
+import {CopyConfig} from "./config/config.interface";
 
-export function getFiles(src: string, options: glob.IOptions = {}) {
-  return new Promise<string[]>((resolve, reject) =>
-    glob(src, options, (e, files) =>
-      e ? reject(e) : resolve(files)))
-    .then(files => _.reject(files, f => _.includes(f, "*")));
+export {waitForChange};
+
+export function getFiles(src: string | string[], options: glob.IOptions = {}) {
+  const sources: string[] = _.isString(src) ? [src] : src;
+  return Promise.all(sources.map(source => new Promise<string[]>((resolve, reject) =>
+    glob(source, options, (e, files) =>
+      e ? reject(e) : resolve(files)))))
+    .then(files =>
+      _.chain(files)
+        .flatten()
+        .uniq()
+        .reject((f: string) => _.includes(f, "*"))
+        .value() as string[]);
 }
 
 export function readFile(src: string) {
@@ -18,10 +29,10 @@ export function readFile(src: string) {
       e ? reject(e) : resolve(content)));
 }
 export function writeFile(dest: string, content: string, options: any = {}) {
-  return new Promise<void>((resolve, reject) =>
+  return new Promise<string>((resolve, reject) =>
     mkdirp(path.dirname(dest), err =>
       err ? reject(err) : fs.writeFile(dest, content, options, e =>
-        e ? reject(e) : resolve())));
+        e ? reject(e) : resolve(dest))));
 }
 export function watch(pattern: string,
                       onChange: (files: string[]) => any,
@@ -42,13 +53,25 @@ export function watch(pattern: string,
   return watcher;
 }
 
-export function waitForChange(file: string) {
-  return new Promise<void>((resolve) => {
-    const watcher = watch(file, () => {
-      watcher.close();
-      resolve();
-    }, {events: ["change", "add"]});
-  });
+export function del(file: string | string[]) {
+  const files = _.isArray(file) ? file : [file];
+  return Promise.all(files.map(f =>
+    new Promise((resolve, reject) =>
+      rimraf(f, e => e ? reject(e) : resolve()))));
+}
+
+export function copy(config: CopyConfig | CopyConfig[]) {
+  if (!config) {
+    return Promise.resolve([]);
+  }
+  const configs = _.isArray(config) ? config : [config];
+  return Promise.all(configs.map(conf =>
+    getFiles(conf.src, {cwd: conf.cwd || ""})
+      .then(files =>
+        Promise.all(files.map(file =>
+          readFile(`${conf.cwd ? `${conf.cwd}/` : ""}${file}`)
+            .then(content =>
+              writeFile(`${conf.dest}/${file}`, content)))))));
 }
 
 export default {

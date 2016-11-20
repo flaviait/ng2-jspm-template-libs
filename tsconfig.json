@@ -12,5 +12,9 @@
   "include": [
     "src/**/*.ts",
     "customTypings.d.ts"
-  ]
+  ],
+  "exclude": [
+    "src/**/*.spec.ts"
+  ],
+  "compileOnSave": true
 }
