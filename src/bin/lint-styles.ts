@@ -2,11 +2,11 @@
 
 import * as program from "commander";
 import {StyleLinter} from "../styles";
-import config from "../config";
+import config from "../config/config";
+import {StylesLintingConfig} from "../config/config.interface";
 
-interface ProgramParams {
-  files: string;
-  watch?: boolean;
+interface Params extends StylesLintingConfig {
+  dev: boolean;
 }
 
 program
@@ -14,12 +14,11 @@ program
   .option("-w, --watch", "Watch the styles")
   .parse(process.argv);
 
-const params = program as any as ProgramParams;
-params.files = program.args[0];
+const params = program as any as Params;
+const defaults = params.dev ? config.styles.lint.dev : config.styles.lint.dist;
+params.files = program.args[0] || defaults.files;
 
-const linter = new StyleLinter(
-  params.files || config.styles.lint.files,
-  params.watch)
+const linter = new StyleLinter(Object.assign({}, defaults, params))
   .start();
 
 if (!params.watch) {

@@ -1,24 +1,18 @@
 #!/usr/bin/env node
 
-import config from "../config";
+import config from "../config/config";
 import {ScriptLinter, TestRunner} from "../scripts";
 import {StyleLinter} from "../styles";
 import "../hmr";
 import "../livereload";
 
-new ScriptLinter(
-  config.scripts.lint.files,
-  config.scripts.lint.exclude,
-  false)
+new ScriptLinter(config.scripts.lint.dist)
   .start();
 
-new StyleLinter(
-  config.styles.lint.files,
-  false)
+new StyleLinter(config.styles.lint.dist)
   .start();
 
-new TestRunner(false)
-  .start()
-  .then(
-    () => process.exit(0),
-    () => process.exit(1));
+new TestRunner(config.scripts.test.dist)
+  .on("error", () => process.exit(1))
+  .on("success", () => process.exit(0))
+  .start();

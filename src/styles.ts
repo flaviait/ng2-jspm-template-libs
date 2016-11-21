@@ -3,30 +3,25 @@ import {EventEmitter} from "events";
 
 import * as _ from "lodash";
 import * as sass from "node-sass";
-import * as autoprefixer from "autoprefixer";
-import * as cssnano from "cssnano";
 import * as postcss from "postcss";
 import * as styleLint from "stylelint";
 import * as log4js from "log4js";
 
-import config from "./config";
+import {StylesCompileConfig, StylesLintingConfig} from "./config/config.interface";
 import utils from "./utils";
 
 export class StyleCompiler extends EventEmitter {
 
   private logger = log4js.getLogger("global-styles");
 
-  constructor(private entry: string,
-              private output: string,
-              private minify?: boolean,
-              private watch?: string) {
+  constructor(private config: StylesCompileConfig) {
     super();
   }
 
   start() {
     this.run();
-    if (this.watch) {
-      utils.watch(this.watch, () => this.run());
+    if (this.config.watchPattern) {
+      utils.watch(this.config.watchPattern as string, () => this.run());
     }
 
     return this;
@@ -36,12 +31,12 @@ export class StyleCompiler extends EventEmitter {
     this.compile()
       .then(
         () => {
-          this.logger.debug(`Global styles written to ${this.output}`);
+          this.logger.debug(`Global styles written to ${this.config.output}`);
           this.emit("success");
         },
         (err) => {
           this.logger.error("Error processing global styles:", err);
-          this.emit("error");
+          this.emit("error", err);
         });
 
     return this;
@@ -49,7 +44,7 @@ export class StyleCompiler extends EventEmitter {
 
   private preprocess(file: string) {
     return new Promise((resolve, reject) =>
-      sass.render(_.assign({file: file}, config.styles.sass, {
+      sass.render(_.assign({file: file}, this.config.sass, {
         sourceMapEmbed: true,
         sourceMapContents: true,
       }), (error, result) => {
@@ -64,12 +59,9 @@ export class StyleCompiler extends EventEmitter {
 
   private postprocess(processed: any) {
     return new Promise((resolve, reject) => {
-      const processors = [autoprefixer(config.styles.autoprefixer)];
-      if (this.minify) {
-        processors.push(cssnano(config.styles.cssnano));
-      }
-      postcss(processors)
-        .process(processed.css, {map: {inline: false}, to: this.output})
+      postcss(this.config.postcss.map(([pluginName, pluginConfig]) =>
+        require(pluginName)(pluginConfig)))
+        .process(processed.css, {map: {inline: false}, to: this.config.output})
         .then(
           (result: any) => resolve(result),
           reject
@@ -79,13 +71,13 @@ export class StyleCompiler extends EventEmitter {
 
   private write(processed: any) {
     return Promise.all([
-      utils.writeFile(this.output, processed.css),
-      utils.writeFile(`${this.output}.map`, processed.map)
+      utils.writeFile(this.config.output, processed.css),
+      utils.writeFile(`${this.config.output}.map`, processed.map)
     ]);
   }
 
   private compile() {
-    return this.preprocess(this.entry)
+    return this.preprocess(this.config.entry)
       .then((processed) => this.postprocess(processed))
       .then((processed) => this.write(processed));
   }
@@ -97,15 +89,14 @@ export class StyleLinter extends EventEmitter {
   private lintingErrors: {[file: string]: any} = {};
   private logger: log4js.Logger = log4js.getLogger("lint-styles");
 
-  constructor(private filesGlob: string,
-              private watch?: boolean) {
+  constructor(private config: StylesLintingConfig) {
     super();
   }
 
   start = () => {
-    utils.getFiles(this.filesGlob).then(this.run);
-    if (this.watch) {
-      utils.watch(this.filesGlob, this.run);
+    utils.getFiles(this.config.files).then(this.run);
+    if (this.config.watch) {
+      utils.watch(this.config.files, this.run);
     }
 
     return this;
