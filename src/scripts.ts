@@ -2,8 +2,7 @@ import * as _ from "lodash";
 import * as fs from "fs";
 import {EventEmitter} from "events";
 import * as log4js from "log4js";
-import * as Linter from "tslint";
-import {LintResult} from "tslint/lib/lint";
+import {ILinterOptions, LintResult, Linter} from "tslint";
 import * as karma from "karma";
 
 import {ScriptsLintingConfig, ScriptsTestConfig} from "./config/config.interface";
@@ -47,14 +46,17 @@ export class ScriptLinter extends EventEmitter {
   };
 
   private lint = (files: string[]) => {
-    const lintOptions = {configuration: this.configuration, formatter: "verbose"};
+    const lintOptions: ILinterOptions = {fix: false, formatter: "verbose"};
 
     return Promise.all(files.map(file =>
       utils.readFile(file).then(content => ({file, content}))))
       .then((fileObjs) =>
         new Promise((resolve, reject) => {
           for (let fileObj of fileObjs) {
-            const lintingResult = new Linter(fileObj.file, fileObj.content, lintOptions).lint();
+            const linter = new Linter(lintOptions);
+            linter.lint(fileObj.file, fileObj.content, this.configuration);
+            const lintingResult = linter.getResult();
+
             if (lintingResult.failureCount > 0) {
               this.lintingErrors[fileObj.file] = lintingResult;
             } else {

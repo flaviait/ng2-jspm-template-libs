@@ -15,7 +15,6 @@
     ],
     "jsdoc-format": true,
     "label-position": true,
-    "label-undefined": true,
     "linebreak-style": [true, "LF"],
     "max-line-length": [
       true,
@@ -42,7 +41,6 @@
     ],
     "no-construct": true,
     "no-debugger": true,
-    "no-duplicate-key": true,
     "no-duplicate-variable": true,
     "no-eval": true,
     "no-inferrable-types": false,
@@ -50,8 +48,6 @@
     "no-shadowed-variable": true,
     "no-switch-case-fall-through": true,
     "no-trailing-whitespace": true,
-    "no-unreachable": true,
-    "no-unused-variable": true,
     "no-use-before-declare": true,
     "no-var-keyword": true,
     "no-var-requires": true,
@@ -69,7 +65,7 @@
       "avoid-escape"
     ],
     "radix": true,
-    "semicolon": true,
+    "semicolon": [true, "always", "ignore-bound-class-methods"],
     "switch-default": true,
     "triple-equals": [
       true,
