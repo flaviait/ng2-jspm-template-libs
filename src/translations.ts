@@ -70,7 +70,7 @@ export class TranslationCompiler extends EventEmitter {
       .then(partials => _.defaultsDeep({}, ..._.map(partials, "translations")))
       .then(translations => this.byLanguage(translations))
       .then(translations => `export default ${JSON.stringify(translations, null, 4)};`)
-      .then(content => utils.writeFile(this.config.output, content));
+      .then((content: string) => utils.writeFile(this.config.output, content));
   }
 
   private runStatistics(partials: {path: string, translations: any}[]) {
