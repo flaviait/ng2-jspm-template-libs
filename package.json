@@ -1,7 +1,7 @@
 {
-  "name": "ng2-jspm-template-libs",
+  "name": "ng2-template-libs",
   "version": "0.2.0",
-  "description": "A collection of utilities which are used by the ng2-jspm-template.",
+  "description": "A collection of utilities which are used by the ng2-templates.",
   "author": {
     "name": "Sven Reglitzki",
     "email": "sreglitzki@gmail.com"
@@ -9,7 +9,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/flaviait/ng2-jspm-template-libs.git"
+    "url": "git+https://github.com/flaviait/ng2-template-libs.git"
   },
   "scripts": {
     "prepublish": "tsc",
