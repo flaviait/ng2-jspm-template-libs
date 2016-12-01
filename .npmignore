@@ -8,3 +8,4 @@ customTypings.d.ts
 tsconfig.json
 tslint.json
 npm-debug.log*
+yarn.lock
