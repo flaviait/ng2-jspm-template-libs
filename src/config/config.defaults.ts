@@ -32,7 +32,7 @@ const stylesConfig = (dev: boolean) => ({
   entry: "src/styles/main.scss",
   output: dev ? ".tmp/main.css" : "dist/main.css",
   minify: !dev,
-  watchPattern: dev && "src/styles/**/*.scss",
+  watch: dev,
   sass: {
     includePaths: ["node_modules"]
   },

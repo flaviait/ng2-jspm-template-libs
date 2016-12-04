@@ -12,7 +12,7 @@ interface Params extends StylesCompileConfig {
 program
   .usage("[options] <entry>")
   .option("-o, --output <file>", "The output file")
-  .option("-w, --watch-pattern <glob>", "Watch the styles")
+  .option("-w, --watch", "Watch the styles")
   .option("-d, --dev", "Use the dev configuration")
   .parse(process.argv);
 
@@ -22,7 +22,7 @@ params.entry = program.args[0] || defaults.entry;
 
 const compiler = new StyleCompiler(Object.assign({}, defaults, params));
 
-if (!params.watchPattern) {
+if (!params.watch) {
   compiler.on("error", () => process.exit(1));
 }
 

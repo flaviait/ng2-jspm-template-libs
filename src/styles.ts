@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as path from "path";
 import {EventEmitter} from "events";
 
 import * as _ from "lodash";
@@ -6,6 +7,7 @@ import * as sass from "node-sass";
 import * as postcss from "postcss";
 import * as styleLint from "stylelint";
 import * as log4js from "log4js";
+import * as sassGraph from "sass-graph";
 
 import {StylesCompileConfig, StylesLintingConfig} from "./config/config.interface";
 import utils from "./utils";
@@ -20,11 +22,26 @@ export class StyleCompiler extends EventEmitter {
 
   start() {
     this.run();
-    if (this.config.watchPattern) {
-      utils.watch(this.config.watchPattern as string, () => this.run());
+    if (this.config.watch) {
+      let filesToWatch = this.getFilesToWatch();
+      const watcher = utils.watch(filesToWatch, () => {
+        this.run();
+        const newFilesToWatch = this.getFilesToWatch(entry);
+        const addedDeps = _.without(newFilesToWatch, ...filesToWatch);
+        const removedDeps = _.without(filesToWatch, ...newFilesToWatch);
+        _.each(addedDeps, file => watcher.add(file));
+        _.each(removedDeps, file => watcher.unwatch(file));
+        filesToWatch = newFilesToWatch;
+      });
     }
 
     return this;
+  }
+
+  getFilesToWatch() {
+    return _.keys(sassGraph.parseFile(this.config.entry, {
+      extensions: ["sass", "scss", "css"]
+    }).index);
   }
 
   run() {
@@ -59,8 +76,13 @@ export class StyleCompiler extends EventEmitter {
 
   private postprocess(processed: any) {
     return new Promise((resolve, reject) => {
-      postcss(this.config.postcss.map(([pluginName, pluginConfig]) =>
-        require(pluginName)(pluginConfig)))
+      postcss((this.config.postcss || []).map(([pluginName, pluginConfig]) => {
+        const plugin = require(pluginName);
+        if (_.isFunction(pluginConfig)) {
+          return plugin(pluginConfig);
+        }
+        return plugin;
+      }))
         .process(processed.css, {map: {inline: false}, to: this.config.output})
         .then(
           (result: any) => resolve(result),

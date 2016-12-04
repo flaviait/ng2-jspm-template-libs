@@ -28,7 +28,7 @@ export interface StylesCompileConfig {
   entry?: string;
   output?: string;
   minify?: boolean;
-  watchPattern?: string | string[];
+  watch?: boolean;
   sass?: SassConfig;
   /**
    * A postcss configuration looks like this:
