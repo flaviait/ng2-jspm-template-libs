@@ -28,22 +28,21 @@ const karmaConfig = (bundleFile: string, watch: boolean) => ({
   singleRun: !watch
 } as KarmaConfig);
 
-const stylesConfig = (dev: boolean) => ({
-  entry: "src/styles/main.scss",
-  output: dev ? ".tmp/main.css" : "dist/main.css",
-  minify: !dev,
+const styles = (dev: boolean) => ({
   watch: dev,
   sass: {
     includePaths: ["node_modules"]
   },
-  postcss: dev ?
-    [
-      ["autoprefixer", {browsers: ["last 2 versions"]}]
-    ] :
-    [
-      ["autoprefixer", {browsers: ["last 2 versions"]}],
-      ["cssnano", {zindex: false}]
-    ]
+  postcss: [
+    ["autoprefixer", {browsers: ["last 2 versions"]}] as any[]
+  ].concat(dev ? [] : [
+    ["cssnano", {zindex: false}]
+  ])
+});
+
+const globalStylesConfig = (dev: boolean) => Object.assign({}, styles(dev), {
+  entry: "src/styles/main.scss",
+  output: dev ? ".tmp/main.css" : "dist/main.css",
 } as StylesCompileConfig);
 
 const defaults: TemplateConfig = {
@@ -106,8 +105,8 @@ const defaults: TemplateConfig = {
     }
   },
   styles: {
-    dev: stylesConfig(true),
-    dist: stylesConfig(false),
+    dev: [globalStylesConfig(true)],
+    dist: [globalStylesConfig(false)],
     lint: {
       dev: {
         files: "src/**/*.scss",

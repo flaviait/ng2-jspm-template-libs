@@ -8,63 +8,92 @@ import * as postcss from "postcss";
 import * as styleLint from "stylelint";
 import * as log4js from "log4js";
 import * as sassGraph from "sass-graph";
+import * as chokidar from "chokidar";
 
 import {StylesCompileConfig, StylesLintingConfig} from "./config/config.interface";
 import utils from "./utils";
 
 export class StyleCompiler extends EventEmitter {
 
-  private logger = log4js.getLogger("global-styles");
+  private logger: log4js.Logger = log4js.getLogger("compile-styles");
+  private watcher: fs.FSWatcher;
+  private entryWatchers: {[file: string]: fs.FSWatcher} = {};
+  private relativePath: string = this.config.cwd || "";
 
   constructor(private config: StylesCompileConfig) {
     super();
   }
 
   start() {
-    this.run();
     if (this.config.watch) {
-      let filesToWatch = this.getFilesToWatch();
-      const watcher = utils.watch(filesToWatch, () => {
-        this.run();
-        const newFilesToWatch = this.getFilesToWatch(entry);
-        const addedDeps = _.without(newFilesToWatch, ...filesToWatch);
-        const removedDeps = _.without(filesToWatch, ...newFilesToWatch);
-        _.each(addedDeps, file => watcher.add(file));
-        _.each(removedDeps, file => watcher.unwatch(file));
-        filesToWatch = newFilesToWatch;
-      });
+      this.watcher = chokidar.watch(this.config.entry as string[], _.pick(this.config, ["cwd"]))
+        .on("unlink", (entry: string) => {
+          this.entryWatchers[entry].close();
+          this.emit("unwatch", entry);
+        })
+        .on("add", (entry: string) => {
+          this.watchForChanges(entry);
+          this.run(entry);
+          this.emit("watch", entry);
+        });
+    } else {
+      this.run(this.config.entry);
     }
 
     return this;
   }
 
-  getFilesToWatch() {
-    return _.keys(sassGraph.parseFile(this.config.entry, {
+  stop() {
+    if (this.watcher) {
+      this.watcher.close();
+    }
+    _.each(this.entryWatchers, watcher => watcher.close());
+  }
+
+  private watchForChanges(entry: string) {
+    let filesToWatch = this.getFilesToWatch(entry);
+    const watcher = utils.watch(filesToWatch, () => {
+      this.run(entry);
+      const newFilesToWatch = this.getFilesToWatch(entry);
+      const addedDeps = _.without(newFilesToWatch, ...filesToWatch);
+      const removedDeps = _.without(filesToWatch, ...newFilesToWatch);
+      _.each(addedDeps, file => watcher.add(file));
+      _.each(removedDeps, file => watcher.unwatch(file));
+      filesToWatch = newFilesToWatch;
+    }, _.pick(this.config, ["cwd"]));
+    this.entryWatchers[entry] = watcher;
+  }
+
+  private getFilesToWatch(entry: string) {
+    return _.keys(sassGraph.parseFile(path.join(this.relativePath, entry), {
       extensions: ["sass", "scss", "css"]
     }).index);
   }
 
-  run() {
-    this.compile()
-      .then(
-        () => {
-          this.logger.debug(`Global styles written to ${this.config.output}`);
-          this.emit("success");
-        },
-        (err) => {
-          this.logger.error("Error processing global styles:", err);
-          this.emit("error", err);
+  private run(entries: string | string[]) {
+    utils.getFiles(entries, _.pick(this.config, ["cwd"]))
+      .then(entryFiles => {
+        entryFiles.forEach(entryFile => {
+          this.compile(entryFile)
+            .then(
+              () => this.emit("success"),
+              (err) => {
+                this.logger.error("Error processing styles:", err);
+                this.emit("error", err);
+              });
         });
+      });
 
     return this;
   }
 
   private preprocess(file: string) {
+    const sourceMapOptions = this.config.sourceMaps ? {
+      sourceMapEmbed: true,
+      sourceMapContents: true,
+    } : {};
     return new Promise((resolve, reject) =>
-      sass.render(_.assign({file: file}, this.config.sass, {
-        sourceMapEmbed: true,
-        sourceMapContents: true,
-      }), (error, result) => {
+      sass.render(_.assign({file: file}, this.config.sass, sourceMapOptions), (error, result) => {
         if (error) {
           error.message = `${error.line}:${error.column} ${error.message}`;
           reject(error);
@@ -74,7 +103,7 @@ export class StyleCompiler extends EventEmitter {
       }));
   }
 
-  private postprocess(processed: any) {
+  private postprocess(output: string, processed: any) {
     return new Promise((resolve, reject) => {
       postcss((this.config.postcss || []).map(([pluginName, pluginConfig]) => {
         const plugin = require(pluginName);
@@ -83,7 +112,10 @@ export class StyleCompiler extends EventEmitter {
         }
         return plugin;
       }))
-        .process(processed.css, {map: {inline: false}, to: this.config.output})
+        .process(processed.css, {
+          map: this.config.sourceMaps && {inline: false},
+          to: output
+        })
         .then(
           (result: any) => resolve(result),
           reject
@@ -91,17 +123,21 @@ export class StyleCompiler extends EventEmitter {
     });
   }
 
-  private write(processed: any) {
-    return Promise.all([
-      utils.writeFile(this.config.output, processed.css),
-      utils.writeFile(`${this.config.output}.map`, processed.map)
-    ]);
+  private write(output: string, processed: any) {
+    const content = this.config.asESModule ? `export default \`${processed.css}\`;` : processed.css;
+    return Promise.all(
+      [utils.writeFile(output, content)]
+        .concat(this.config.sourceMaps ? [utils.writeFile(`${output}.map`, processed.map)] : []));
   }
 
-  private compile() {
-    return this.preprocess(this.config.entry)
-      .then((processed) => this.postprocess(processed))
-      .then((processed) => this.write(processed));
+  private compile(entry: string) {
+    const outputFile = this.config.output
+      || path.join(this.config.outDir, entry.replace(/\.(s[ac]ss)$/, this.config.asESModule ? ".$1.js" : ".css"));
+    const entryFile = path.join(this.relativePath, entry);
+    return this.preprocess(entryFile)
+      .then((processed) => this.postprocess(outputFile, processed))
+      .then((processed) => this.write(outputFile, processed))
+      .then(() => this.logger.debug(`Compiled ${entryFile} to ${outputFile}`));
   }
 }
 
