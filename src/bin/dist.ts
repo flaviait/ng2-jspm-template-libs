@@ -17,6 +17,7 @@ assets
     assets.copy();
     new ScriptLinter(config.scripts.lint.dist).on("error", onError).start();
     new StyleLinter(config.styles.lint.dist).on("error", onError).start();
-    new StyleCompiler(config.styles.dist).on("error", onError).start();
+    config.styles.dist.forEach(styleConfig =>
+      new StyleCompiler(styleConfig).on("error", onError).start());
     new TranslationCompiler(config.translations.dist).on("error", onError).start();
   });

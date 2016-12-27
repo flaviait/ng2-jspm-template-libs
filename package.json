@@ -1,6 +1,6 @@
 {
   "name": "ng2-template-libs",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A collection of utilities which are used by the ng2-templates.",
   "author": {
     "name": "Sven Reglitzki",
@@ -59,6 +59,7 @@
     "phantomjs-prebuilt": "^2.1.13",
     "postcss": "^5.2.6",
     "rimraf": "^2.5.4",
+    "sass-graph": "^2.1.2",
     "stylelint": "^7.6.0",
     "tslint": "^4.0.2",
     "typescript": "^2.0.10",

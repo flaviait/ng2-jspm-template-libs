@@ -34,10 +34,10 @@ export function writeFile(dest: string, content: string, options: any = {}) {
       err ? reject(err) : fs.writeFile(dest, content, options, e =>
         e ? reject(e) : resolve(dest))));
 }
-export function watch(pattern: string,
+export function watch(pattern: string | string[],
                       onChange: (files: string[]) => any,
                       opts: any = {debounce: 100, events: ["change"]}) {
-  const watcher = chokidar.watch(pattern, opts);
+  const watcher = chokidar.watch(pattern as string[], opts);
   const files: string[] = [];
   const debouncedCallback = _.debounce(() => {
     onChange(files);

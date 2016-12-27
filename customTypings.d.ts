@@ -9,4 +9,5 @@ declare module "cssnano"
 declare module "postcss"
 declare module "stylelint"
 declare module "node-delete"
-declare module "wait-for-change";
+declare module "wait-for-change"
+declare module "sass-graph"

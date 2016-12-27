@@ -12,28 +12,36 @@ export class Assets extends EventEmitter {
   }
 
   clean() {
-    del(this.config.clean)
-      .then(() => {
-          this.logger.debug("Clean complete.");
-          this.emit("clean");
-        },
-        e => {
-          this.logger.error("Error during cleaning", e);
-          this.emit("error", e);
-        });
+    if (this.config.clean) {
+      del(this.config.clean)
+        .then(() => {
+            this.logger.debug("Clean complete.");
+            this.emit("clean");
+          },
+          e => {
+            this.logger.error("Error during cleaning", e);
+            this.emit("error", e);
+          });
+    } else {
+      setTimeout(() => this.emit("clean"));
+    }
     return this;
   }
 
   copy() {
-    copy(this.config.copy)
-      .then(() => {
-          this.logger.debug("Copy complete.");
-          this.emit("copy");
-        },
-        e => {
-          this.logger.error("Error during copying", e);
-          this.emit("error", e);
-        });
+    if (this.config.copy) {
+      copy(this.config.copy)
+        .then(() => {
+            this.logger.debug("Copy complete.");
+            this.emit("copy");
+          },
+          e => {
+            this.logger.error("Error during copying", e);
+            this.emit("error", e);
+          });
+    } else {
+      setTimeout(() => this.emit("copy"));
+    }
     return this;
   }
 

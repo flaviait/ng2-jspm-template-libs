@@ -19,7 +19,8 @@ function getConfig() {
   });
   const emitResult = program.emit(undefined, (fileName: string, data: string) => {
     config = runInNewContext(data, {
-      exports: {}
+      exports: {},
+      require
     }, {
       filename: "config.ts"
     });
