@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import * as _ from "lodash";
 import * as program from "commander";
 import config from "../config/config";
 import {StyleCompiler} from "../styles";
@@ -7,6 +8,7 @@ import {StylesCompileConfig} from "../config/config.interface";
 
 interface Params extends StylesCompileConfig {
   dev: boolean;
+  index: number;
 }
 
 program
@@ -16,13 +18,19 @@ program
   .option("-c, --cwd <direcctory>", "The directory that the entries are relative to. Only makes sense with specified outDir.")
   .option("-w, --watch", "Watch the styles")
   .option("-d, --dev", "Use the dev configuration")
+  .option("-i, --index <index>", "Use the default config of the specified index. Only makes sense with an array of style configs")
   .parse(process.argv);
 
 const params = program as any as Params;
-const defaults = params.dev ? config.styles.dev[0] : config.styles.dist[0];
+params.index = Number(params.index) || 0;
+const defaults: StylesCompileConfig = params.dev ?
+  (config.styles.dev as StylesCompileConfig[])[params.index] || config.styles.dev :
+  (config.styles.dist as StylesCompileConfig[])[params.index] || config.styles.dist;
 params.entry = program.args[0] || defaults.entry;
 
-const compiler = new StyleCompiler(Object.assign({}, defaults, params));
+_.defaults(params, defaults);
+
+const compiler = new StyleCompiler(params);
 
 if (!params.watch) {
   compiler.on("error", () => process.exit(1));

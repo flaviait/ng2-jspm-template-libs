@@ -105,8 +105,8 @@ const defaults: TemplateConfig = {
     }
   },
   styles: {
-    dev: [globalStylesConfig(true)],
-    dist: [globalStylesConfig(false)],
+    dev: globalStylesConfig(true),
+    dist: globalStylesConfig(false),
     lint: {
       dev: {
         files: "src/**/*.scss",

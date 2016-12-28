@@ -124,8 +124,8 @@ export interface TemplateConfig {
     };
   };
   styles?: {
-    dev?: StylesCompileConfig[];
-    dist?: StylesCompileConfig[];
+    dev?: StylesCompileConfig | StylesCompileConfig[];
+    dist?: StylesCompileConfig | StylesCompileConfig[];
     lint?: {
       dev?: StylesLintingConfig;
       dist?: StylesLintingConfig;
