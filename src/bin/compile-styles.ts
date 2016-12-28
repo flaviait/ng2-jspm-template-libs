@@ -30,10 +30,6 @@ params.entry = program.args[0] || defaults.entry;
 
 _.defaults(params, defaults);
 
-const compiler = new StyleCompiler(params);
-
-if (!params.watch) {
-  compiler.on("error", () => process.exit(1));
-}
-
-compiler.start();
+new StyleCompiler(params)
+  .on("error", params.watch ? _.noop : () => process.exit(1))
+  .start();
