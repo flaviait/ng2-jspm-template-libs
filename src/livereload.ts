@@ -1,9 +1,9 @@
 import * as livereload from "livereload";
 import config from "./config/config";
 
-if (config.devPorts && config.devPorts.livereload) {
+if (config.livereload) {
   livereload.createServer({
-    port: config.devPorts.livereload
+    port: config.livereload.port
   })
-    .watch([".tmp/main.css", "src/dev/index.dev.html"]);
+    .watch(config.livereload.watch);
 }

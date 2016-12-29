@@ -1,5 +1,15 @@
 import {ConfigOptions as KarmaOptions} from "karma";
 
+export interface LivereloadConfig {
+  port?: number;
+  watch?: string | string[];
+}
+
+export interface HotModuleReplacementConfig {
+  port?: number;
+  root?: string;
+}
+
 export interface ServerConfig {
   entry?: string;
   port?: number;
@@ -96,11 +106,8 @@ export interface ScriptsConfig {
 }
 
 export interface TemplateConfig {
-  devPorts?: {
-    livereload?: number;
-    hmr?: number;
-  };
-  srcPath?: string;
+  livereload?: LivereloadConfig;
+  hmr?: HotModuleReplacementConfig;
   tmpPath?: string;
   distPath?: string;
   server?: {
