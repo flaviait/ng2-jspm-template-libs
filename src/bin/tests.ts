@@ -3,8 +3,6 @@
 import config from "../config/config";
 import {ScriptLinter, TestRunner} from "../scripts";
 import {StyleLinter} from "../styles";
-import "../hmr";
-import "../livereload";
 
 new ScriptLinter(config.scripts.lint.dist)
   .start();
