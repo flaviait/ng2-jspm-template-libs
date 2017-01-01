@@ -38,4 +38,8 @@ function getConfig() {
   return config;
 }
 
-export default _.merge({}, defaults, getConfig());
+export default _.mergeWith({}, defaults, getConfig(), (objValue: any, srcValue: any) => {
+  if (_.isArray(objValue)) {
+    return srcValue;
+  }
+}) as TemplateConfig;

@@ -46,11 +46,14 @@ const globalStylesConfig = (dev: boolean) => Object.assign({}, styles(dev), {
 } as StylesCompileConfig);
 
 const defaults: TemplateConfig = {
-  devPorts: {
-    livereload: 35728,
-    hmr: 35727
+  hmr: {
+    port: 35727,
+    root: "src"
   },
-  srcPath: "src",
+  livereload: {
+    port: 35728,
+    watch: [".tmp/main.css", "src/dev/index.dev.html"]
+  },
   tmpPath: ".tmp",
   distPath: "dist",
   server: {
@@ -105,8 +108,8 @@ const defaults: TemplateConfig = {
     }
   },
   styles: {
-    dev: [globalStylesConfig(true)],
-    dist: [globalStylesConfig(false)],
+    dev: globalStylesConfig(true),
+    dist: globalStylesConfig(false),
     lint: {
       dev: {
         files: "src/**/*.scss",
