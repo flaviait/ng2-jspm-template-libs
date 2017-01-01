@@ -3,6 +3,7 @@ import {ConfigOptions as KarmaOptions} from "karma";
 export interface LivereloadConfig {
   port?: number;
   watch?: string | string[];
+  delay?: number;
 }
 
 export interface HotModuleReplacementConfig {
