@@ -69,9 +69,27 @@ export function copy(config: CopyConfig | CopyConfig[]) {
     getFiles(conf.src, {cwd: conf.cwd || ""})
       .then(files =>
         Promise.all(files.map(file =>
-          readFile(`${conf.cwd ? `${conf.cwd}/` : ""}${file}`)
-            .then(content =>
-              writeFile(`${conf.dest}/${file}`, content)))))));
+          new Promise((resolve, reject) => {
+            const src = path.join(conf.cwd ? `${conf.cwd}` : "", file);
+            const dest = path.join(conf.dest, file);
+            mkdirp(path.dirname(dest), error => {
+              if (error) {
+                reject(error);
+              } else {
+                const readStream = fs.createReadStream(src);
+                const writeStream = fs.createWriteStream(dest);
+                const handleError = (err: Error) => {
+                  readStream.destroy();
+                  writeStream.end();
+                  reject(err);
+                };
+                readStream.on("error", handleError);
+                writeStream.on("error", handleError);
+                writeStream.on("close", resolve);
+                readStream.pipe(writeStream);
+              }
+            });
+          }))))));
 }
 
 export default {
