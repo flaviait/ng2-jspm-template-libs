@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import * as _ from "lodash";
 import {getLogger} from "log4js";
 import {TemplateConfig} from "./config.interface";
@@ -12,31 +13,19 @@ process.on("unhandledRejection", (err: Error) => {
 const logger = getLogger("config");
 
 function getConfig() {
-  let config: TemplateConfig = null;
+  try {
+    const content = fs.readFileSync("config.ts", "utf-8");
+    const compiled = ts.transpileModule(content, {compilerOptions: {module: ts.ModuleKind.CommonJS}});
 
-  const program = ts.createProgram(["config.ts"], {
-    module: ts.ModuleKind.CommonJS,
-    target: ts.ScriptTarget.Latest
-  });
-  const emitResult = program.emit(undefined, (fileName: string, data: string) => {
-    config = runInNewContext(data, {
+    return runInNewContext(compiled.outputText, {
       exports: {},
       require
     }, {
       filename: "config.ts"
-    });
-  });
-
-  const allDiagnostics = ts.getPreEmitDiagnostics(program).concat(emitResult.diagnostics);
-  allDiagnostics.forEach(diagnostic => {
-    let {line, character} = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-    let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
-    logger.error(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
-  });
-  if (allDiagnostics.length > 0) {
-    process.exit(1);
+    }) as TemplateConfig;
+  } catch (e) {
+    logger.error(e);
   }
-  return config;
 }
 
 export default _.mergeWith({}, defaults, getConfig(), (objValue: any, srcValue: any) => {
