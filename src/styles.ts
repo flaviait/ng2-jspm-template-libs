@@ -16,8 +16,8 @@ import utils from "./utils";
 export class StyleCompiler extends EventEmitter {
 
   private logger: log4js.Logger = log4js.getLogger("compile-styles");
-  private watcher: fs.FSWatcher;
-  private entryWatchers: {[file: string]: fs.FSWatcher} = {};
+  private watcher: chokidar.FSWatcher;
+  private entryWatchers: {[file: string]: chokidar.FSWatcher} = {};
   private relativePath: string = this.config.cwd || "";
 
   constructor(private config: StylesCompileConfig) {
