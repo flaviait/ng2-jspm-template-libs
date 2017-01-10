@@ -15,7 +15,8 @@ function getConfig() {
   let config: TemplateConfig = null;
 
   const program = ts.createProgram(["config.ts"], {
-    module: ts.ModuleKind.CommonJS
+    module: ts.ModuleKind.CommonJS,
+    target: ts.ScriptTarget.Latest
   });
   const emitResult = program.emit(undefined, (fileName: string, data: string) => {
     config = runInNewContext(data, {
